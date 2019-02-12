@@ -1,0 +1,66 @@
+1 page, shows board and available pieces
+select human/ai for players 1 and 2, start game
+
+on first move, you just choose the piece to place and it goes in the centre
+
+click on a piece in the available pile, then click somewhere to place it
+click on a piece in the actual game, then click somewhere to move it to
+status "Placing beetle" with a cross to cancel it
+"Illegal move" if illegal
+"White to play"
+
+display a "dot" in each place that is adjacent to the existing hive?
+automatically zoom out if the hive gets too big?
+
+stacked beetles?
+
+each player starts with:
+1 queen bee
+2 spider
+2 beetle
+3 grasshopper
+3 soldier ant
+
+so max. size of 22x22
+
+white goes first.
+
+game state is:
+ - whose turn is it?
+ - where are the pieces?
+   - there can be multiple pieces in one hex, only the top piece can move
+ - map of coordinate => stack of pieces
+
+placing a new piece is legal if:
+ - it touches the hive (except on the first player's first turn)
+ - it only touches your own colour (except on the first turn) - this is the colour of the topmost piece in the event of a stack
+ - it is placed in an empty hexagon
+ - on the player's 4th turn, either the queen bee has already been placed, or the queen bee is the piece we're now placing
+ - on the player's 1st turn, the queen bee can not be placed
+
+moving a piece is legal if:
+ - the player's queen bee has already been placed
+ - there is not a beetle on top of the piece
+ - removing it from its starting place does not disconnect the hive (not allowed even if placing it in its ending place would reconnect it)
+    queen bee:
+        - it is moved to an adjacent unoccupied tile
+    spider:
+        - there is a 3-step route from where it started to where it ends, where each hex on the route is adjacent to the hive and has not already been stepped on in the route (i.e. no backtracking)
+    beetle:
+        - it is moved to an adjacent tile (occupied or not)
+    grasshopper:
+        - it is moved in a straight line across occupied tiles to an unoccupied tile (it is ok to jump across beetles)
+    soldier ant:
+        - can be moved any number of steps, where each hex on the route is adjacent to the hive and it does not end up back where it started
+
+in all 1-step moves,
+
+if there are no legal moves, you just lose your turn and the game continues
+players may *not* otherwise pass
+
+the game is won if:
+ - your opponent's queen bee is surronded on all 6 sides and your queen bee is not
+
+the game is drawn if:
+ - both players agree to a draw
+ - both opponent's queen bees become surrounded at the same time
