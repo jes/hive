@@ -1,10 +1,17 @@
 // ui
 $(document).ready(function() {
-    var game = new Hive();
-    var view = new HiveView('#hive', game);
+    let game = new Hive();
+    let view = new HiveView('hive', game);
+
+    view.onmovestart = function(piece) {
+        if (game.winner() || game.draw())
+            return false;
+        else
+            return true;
+    };
 
     view.onmove = function(move) {
-        if (game.legal_move(move)) {
+        if (game.is_legal_move(move)) {
             game.play_move(move);
             if (game.winner()) {
                 $('#status').text(game.winner() + " wins");
