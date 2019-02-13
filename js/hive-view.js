@@ -139,8 +139,8 @@ HiveView.prototype.redraw = function() {
     if (this.zoom < 1 || isNaN(this.zoom))
         this.zoom = 1;
 
-    this.offx = -(minx + maxx - canvas.width) / 2;
-    this.offy = -(miny + maxy - canvas.height) / 2;
+    this.offx = -(minx/this.zoom + maxx/this.zoom - canvas.width) / 2;
+    this.offy = -(miny/this.zoom + maxy/this.zoom - canvas.height) / 2;
     console.log([this.offx, this.offy]);
 
     // draw the pieces
