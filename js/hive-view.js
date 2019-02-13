@@ -94,7 +94,7 @@ HiveView.prototype.hex2xy = function(hex) {
     let y = (hex[1] * 130) / this.zoom;
 
     // odd-numbered rows are offset in x by -80px
-    if (hex[1]%2 == 1)
+    if (hex[1]%2 != 0)
         x -= 80/this.zoom;
 
     return [x, y];
