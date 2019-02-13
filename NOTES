@@ -32,6 +32,7 @@ game state is:
  - map of coordinate => stack of pieces
 
 placing a new piece is legal if:
+ - they still have some of that piece remaining
  - it touches the hive (except on the first player's first turn)
  - it only touches your own colour (except on the first turn) - this is the colour of the topmost piece in the event of a stack
  - it is placed in an empty hexagon

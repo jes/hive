@@ -7,7 +7,7 @@ function Hive() {
     };
 
     this.board = {};
-    this.board = {"0,0": [["white","queenbee"]], "0,1":[["black","queenbee"]], "1,1": [["white","spider"]]};
+    this.board = {"0,0": [["white","queenbee"]], "0,1":[["black","queenbee"]], "1,1": [["white","spider"]], "1,2":[["black","spider"]]};
 }
 
 Hive.prototype.is_legal_move = function(move) {
