@@ -84,6 +84,19 @@ Hive.prototype.adjacent_tiles = function(hex) {
     return adj;
 }
 
+Hive.prototype.is_adjacent = function(hex1, hex2) {
+    let adj = this.adjacent_tiles(hex1);
+
+    console.log(["is_adjacent", hex1, hex2, adj]);
+
+    for (t of adj) {
+        if (t == hex2)
+            return true;
+    }
+
+    return false;
+};
+
 // TODO: steppable_tiles() - analogous to adjacent_tiles but says if you're allowed to step between
 // it is possible to step into adjacent tile X if the adjacent tiles immediately clockwise and
 // anticlockwise of X are both unoccupied
@@ -130,7 +143,8 @@ Hive.prototype.is_legal_move = function(move) {
         }
     } else if (move[0][0] == 'tile') {
         let movefromstr = move[0][1] + "," + move[0][2];
-        if (this.piece_at(movefromstr) == false) {
+        let piece = this.piece_at(movefromstr);
+        if (piece == false) {
             console.log("Can't move a piece from an empty tile");
             return false;
         }
@@ -143,14 +157,30 @@ Hive.prototype.is_legal_move = function(move) {
             console.log("Can't move pieces before placing the queenbee");
             return false;
         }
-
-        // TODO: does removing this piece disconnect the hive?
         if (!this.hive_connected(movefromstr)) {
             console.log("Can't disconnect the hive");
             return false;
         }
 
-        // TODO: piece-specific rules
+        if (piece[1] == 'queenbee') {
+            if (!this.is_adjacent(movetostr, movefromstr)) {
+                console.log("queenbee can only move to adjacent tiles");
+                return false;
+            }
+        } else if (piece[1] == 'spider') {
+        } else if (piece[1] == 'beetle') {
+            if (!this.is_adjacent(movetostr, movefromstr)) {
+                console.log("beetle can only move to adjacent tiles");
+                return false;
+            }
+        } else if (piece[1] == 'grasshopper') {
+        } else if (piece[1] == 'soldierant') {
+        }
+
+        if (piece[1] != 'beetle' && this.piece_at(movetostr)) {
+            console.log("Can't move on top of another piece");
+            return false;
+        }
     } else {
         console.log("Unknown move type: " + move[0][0]);
         return false;
