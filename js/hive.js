@@ -88,11 +88,75 @@ Hive.prototype.adjacent_tiles = function(hex) {
     return adj;
 };
 
+Hive.prototype.is_adjacent = function(hex1, hex2) {
+    let adj = this.adjacent_tiles(hex1);
+
+    for (t of adj) {
+        if (t == hex2)
+            return true;
+    }
+
+    return false;
+};
+
+// return list of unoccupied tiles adjacent to hex that can be slid in to
+Hive.prototype.steppable_tiles = function(hex) {
+    let adj = this.adjacent_tiles(hex);
+
+    let steppable = [];
+
+    // adj is in this order:
+    //      2 3
+    //     0 - 1
+    //      4 5
+    // and we can slide into (e.g.) "1" if either "3" or "5" are unoccuped
+    let order = [2, 3, 1, 5, 4, 0];
+
+    console.log(["stepadj",hex,adj]);
+
+    for (let i=0; i < order.length; i++) {
+        // a,b,c are adjacent tiles in clockwise order
+        let a = adj[order[i]];
+        let b = adj[order[(i+1)%6]];
+        let c = adj[order[(i+2)%6]];
+
+        console.log(["stepcheck",a,b,c]);
+
+        // can't slide into an occupied tile
+        if (this.piece_at(b))
+            continue;
+
+        // can't slide through a too-narrow gap
+        if (this.piece_at(a) && this.piece_at(c))
+            continue;
+
+        steppable.push(b);
+    }
+
+    console.log(["steppable",hex,steppable]);
+    return steppable;
+};
+
+// return true if hex1 can slide directly into hex2 (i.e. not blocked by other pieces)
+Hive.prototype.is_steppable = function(hex1, hex2) {
+    let step = this.steppable_tiles(hex1);
+
+    for (t of step) {
+        if (t == hex2)
+            return true;
+    }
+
+    return false;
+};
+
 // return true if the route from hex1 to hex2 is ok for a grasshopper
 Hive.prototype.can_grasshopper = function(hex1, hex2) {
     let p1 = hex1.split(",");
     let p2 = hex2.split(",");
     let dir;
+
+    // TODO: this function certainly rejects some legal grasshopper moves,
+    // particularly it rejected a 1-tile hop in the "bottom left" direction
 
     // work out which direction we need to travel in, which corresponds to the
     // tile index from adjacent_tiles()
@@ -117,23 +181,6 @@ Hive.prototype.can_grasshopper = function(hex1, hex2) {
     }
     return true;
 };
-
-Hive.prototype.is_adjacent = function(hex1, hex2) {
-    let adj = this.adjacent_tiles(hex1);
-
-    console.log(["is_adjacent", hex1, hex2, adj]);
-
-    for (t of adj) {
-        if (t == hex2)
-            return true;
-    }
-
-    return false;
-};
-
-// TODO: steppable_tiles() - analogous to adjacent_tiles but says if you're allowed to step between
-// it is possible to step into adjacent tile X if the adjacent tiles immediately clockwise and
-// anticlockwise of X are both unoccupied
 
 // hex = "1,2"
 Hive.prototype.piece_at = function(hex) {
@@ -176,6 +223,7 @@ Hive.prototype.is_legal_move = function(move) {
             }
         }
         // TODO: can the piece be slid into this slot from outside the playing area?
+        // (try finding a slidable route from a place that is just outside the play area)
     } else if (move[0][0] == 'tile') {
         let movefromstr = move[0][1] + "," + move[0][2];
         let piece = this.piece_at(movefromstr);
@@ -201,21 +249,26 @@ Hive.prototype.is_legal_move = function(move) {
         }
 
         if (piece[1] == 'queenbee') {
-            // TODO: check that the route is slidable
-            if (!this.is_adjacent(movetostr, movefromstr)) {
+            if (!this.is_steppable(movefromstr, movetostr)) {
                 console.log("queenbee can only move to adjacent tiles");
                 return false;
             }
         } else if (piece[1] == 'spider') {
             // TODO: is there a 3-step slidable route from movefromstr to movetostr?
         } else if (piece[1] == 'beetle') {
-            // TODO: check that the route is slidable
-            if (!this.is_adjacent(movetostr, movefromstr)) {
+            if (!this.is_steppable(movefromstr, movetostr)) {
                 console.log("beetle can only move to adjacent tiles");
                 return false;
             }
+            // TODO: Beetles have an important but rarely-seen movement restriction,
+            // a variation of the Freedom to Move Rule; a Beetle may not move directly
+            // between two adjacent hexes if doing so would require passing through a
+            // gap between two stacks of pieces that are both higher than the origin
+            // hex (without the Beetle on it) and the destination hex. The Beetle may,
+            // however, take two turns to reach this spot by first crawling into either
+            // of the stacks blocking its path.
         } else if (piece[1] == 'grasshopper') {
-            if (!this.can_grasshopper(movetostr, movefromstr)) {
+            if (!this.can_grasshopper(movefromstr, movetostr)) {
                 console.log("can't grasshopper");
                 return false;
             }
