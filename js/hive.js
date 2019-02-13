@@ -12,7 +12,6 @@ function Hive() {
     };
 
     this.board = {};
-    this.board = {"0,0": [["white","queenbee"]], "0,1":[["black","queenbee"]], "1,1": [["white","spider"]], "1,2":[["black","spider"]]};
 }
 
 // TODO: refactor this like in the isopath game to use throw/catch

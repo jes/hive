@@ -28,7 +28,7 @@ HiveView.prototype.populate_pieces = function() {
     for (let player of ["white","black"]) {
         let html = '';
         for (let piece of ["queenbee", "spider", "beetle", "grasshopper", "soldierant"]) {
-            html += "<img style=\"width:64px; margin-bottom: 10px\" id=\"" + this.element_id + "-" + player + "-" + piece + "\" src=\"img/" + player + "-" + piece + ".png\"><br>";
+            html += "<img style=\"width:64px; margin-bottom: 10px\" id=\"" + this.element_id + "-" + player + "-" + piece + "\" src=\"img/" + player + "-" + piece + ".png\"><span id=\"" + this.element_id + "-" + player + "-" + piece + "-label\"></span><br>";
         }
         console.log(html);
         $('#' + this.element_id + "-" + player + "-pieces").html(html);
@@ -134,9 +134,17 @@ HiveView.prototype.redraw = function() {
         ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, xy[0]-(img.naturalWidth/(2*this.zoom)), xy[1]-(img.naturalHeight/(2*this.zoom)), img.naturalWidth/this.zoom, img.naturalHeight/this.zoom);
     }
 
-    // if (this.movestart), hide the piece they picked up?
-
-    // TODO: hide the pieces they've already used by setting $('#hive-black-queenbee').css('opacity','0.3');
+    // hide the pieces they've already used
+    for (let player of ["white","black"]) {
+        for (let piece of ["queenbee", "spider", "beetle", "grasshopper", "soldierant"]) {
+            if (this.game.remaining_pieces[player][piece] <= 0) {
+                $('#' + this.element_id + "-" + player + "-" + piece).css('opacity', '0.3');
+                $('#' + this.element_id + "-" + player + "-" + piece + "-label").text("");
+            } else {
+                $('#' + this.element_id + "-" + player + "-" + piece + "-label").text("x" + this.game.remaining_pieces[player][piece]);
+            }
+        }
+    }
 };
 
 // click = ['piece', 'white', 'beetle'] for unplayed pieces
@@ -156,10 +164,13 @@ HiveView.prototype.handle_click = function(click) {
             this.movestart = click;
             this.redraw();
         }
+
+        // TODO: if it's turn 1 for white, just place their piece at 0,0
     } else {
         // this click is on the destination tile
         let moveend = [click[1], click[2]]; // [3, 2]
-        this.onmove([this.movestart, moveend]);
+        let move = [this.movestart, moveend];
         this.movestart = false;
+        this.onmove(move);
     }
 };
