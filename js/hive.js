@@ -56,6 +56,10 @@ Hive.prototype.hive_connected = function(avoid_hex) {
 };
 
 // hex = "1,2"
+// returned adjacent tiles are in this order:
+//      2 3
+//     0 - 1
+//      4 5
 Hive.prototype.adjacent_tiles = function(hex) {
     let xy = hex.split(",");
     let adj = [];
@@ -82,7 +86,37 @@ Hive.prototype.adjacent_tiles = function(hex) {
     }
 
     return adj;
-}
+};
+
+// return true if the route from hex1 to hex2 is ok for a grasshopper
+Hive.prototype.can_grasshopper = function(hex1, hex2) {
+    let p1 = hex1.split(",");
+    let p2 = hex2.split(",");
+    let dir;
+
+    // work out which direction we need to travel in, which corresponds to the
+    // tile index from adjacent_tiles()
+    if (p1[1] == p2[1]) { // horizontal
+        if (p1[0] > p2[0]) dir = 0; // left
+        else dir = 1; //right
+    } else if (p1[1] > p2[1]) { // diagonal up
+        if (p1[0] > p2[0]) dir = 2; // up left
+        else dir = 3; // up right
+    } else { // diagonal down
+        if (p1[0] > p2[0]) dir = 4; // down left
+        else dir = 5; // down right
+    }
+
+    // now see if there is a route in this direction from hex1 to hex2 over occupied tiles
+    let hex = hex1;
+    while (hex != hex2) {
+        let adj = this.adjacent_tiles(hex);
+        hex = adj[dir];
+        if (!this.piece_at(hex))
+            return false;
+    }
+    return true;
+};
 
 Hive.prototype.is_adjacent = function(hex1, hex2) {
     let adj = this.adjacent_tiles(hex1);
@@ -141,12 +175,16 @@ Hive.prototype.is_legal_move = function(move) {
                 }
             }
         }
+        // TODO: can the piece be slid into this slot from outside the playing area?
     } else if (move[0][0] == 'tile') {
         let movefromstr = move[0][1] + "," + move[0][2];
         let piece = this.piece_at(movefromstr);
         if (piece == false) {
             console.log("Can't move a piece from an empty tile");
             return false;
+        }
+        if (movetostr == movefromstr) {
+            console.log("Piece must be moved");
         }
         let len = this.board[movefromstr].length;
         if (this.board[movefromstr][len-1][0] != this.turn) {
@@ -163,18 +201,26 @@ Hive.prototype.is_legal_move = function(move) {
         }
 
         if (piece[1] == 'queenbee') {
+            // TODO: check that the route is slidable
             if (!this.is_adjacent(movetostr, movefromstr)) {
                 console.log("queenbee can only move to adjacent tiles");
                 return false;
             }
         } else if (piece[1] == 'spider') {
+            // TODO: is there a 3-step slidable route from movefromstr to movetostr?
         } else if (piece[1] == 'beetle') {
+            // TODO: check that the route is slidable
             if (!this.is_adjacent(movetostr, movefromstr)) {
                 console.log("beetle can only move to adjacent tiles");
                 return false;
             }
         } else if (piece[1] == 'grasshopper') {
+            if (!this.can_grasshopper(movetostr, movefromstr)) {
+                console.log("can't grasshopper");
+                return false;
+            }
         } else if (piece[1] == 'soldierant') {
+            // TODO: is there any slidable route from movefromstr to movetostr?
         }
 
         if (piece[1] != 'beetle' && this.piece_at(movetostr)) {
@@ -223,6 +269,7 @@ Hive.prototype.play_move = function(move) {
         this.board[moveto[0] + "," + moveto[1]] = [];
     this.board[moveto[0] + "," + moveto[1]].push(placepiece);
 
+    // TODO: if there are no legal moves for the other player, turn comes back to this player
     this.turn = this.other[this.turn];
     if (this.turn == 'white')
         this.turnnum++;
