@@ -15,11 +15,52 @@ function Hive() {
     this.board = {};
 }
 
+Hive.prototype.occupied_tiles = function(avoid_hex) {
+    let tiles = [];
+    for (let hex in this.board) {
+        if (this.piece_at(hex) && (!avoid_hex || hex != avoid_hex))
+            tiles.push(hex);
+    }
+
+    return tiles;
+};
+
+// return true if the hive is still fully connected even if avoid_hex is removed
+Hive.prototype.hive_connected = function(avoid_hex) {
+    let tiles = this.occupied_tiles(avoid_hex);
+    let visited = {};
+
+    let q = [];
+    q.push(tiles[0]);
+    visited[tiles[0]] = true;
+
+    // bfs flood fill
+    while (q.length > 0) {
+        let thishex = q.shift();
+        let adj = this.adjacent_tiles(thishex);
+        for (let hex of adj) {
+            if (!this.piece_at(hex) || visited[hex] || hex == avoid_hex)
+                continue;
+            q.push(hex);
+            visited[hex] = true;
+        }
+    }
+
+    // if there were any unvisited hexes, the hive is not connected
+    for (let t of tiles) {
+        if (!visited[t])
+            return false;
+    }
+
+    return true;
+};
+
 // hex = "1,2"
 Hive.prototype.adjacent_tiles = function(hex) {
-    console.log(["adjacent",hex]);
     let xy = hex.split(",");
     let adj = [];
+
+    console.log(["adjacent",hex]);
 
     xy[0] = parseInt(xy[0]);
     xy[1] = parseInt(xy[1]);
@@ -40,9 +81,12 @@ Hive.prototype.adjacent_tiles = function(hex) {
         }
     }
 
-    console.log(adj);
     return adj;
 }
+
+// TODO: steppable_tiles() - analogous to adjacent_tiles but says if you're allowed to step between
+// it is possible to step into adjacent tile X if the adjacent tiles immediately clockwise and
+// anticlockwise of X are both unoccupied
 
 // hex = "1,2"
 Hive.prototype.piece_at = function(hex) {
@@ -78,7 +122,6 @@ Hive.prototype.is_legal_move = function(move) {
         if (this.turnnum != 0) {
             for (let hex of this.adjacent_tiles(movetostr)) {
                 let p = this.piece_at(hex);
-                console.log(p);
                 if (p && p[0] != this.turn) {
                     console.log("Can't place a piece adjacent to opponent pieces");
                     return false;
@@ -102,13 +145,28 @@ Hive.prototype.is_legal_move = function(move) {
         }
 
         // TODO: does removing this piece disconnect the hive?
+        if (!this.hive_connected(movefromstr)) {
+            console.log("Can't disconnect the hive");
+            return false;
+        }
+
         // TODO: piece-specific rules
     } else {
         console.log("Unknown move type: " + move[0][0]);
         return false;
     }
 
-    // TODO: movetostr must be adjacent to the hive
+    if (this.turnnum > 0 || this.turn == 'black') {
+        let have_adjacent = false;
+        for (let hex of this.adjacent_tiles(movetostr)) {
+            if (this.piece_at(hex))
+                have_adjacent = true;
+        }
+        if (!have_adjacent) {
+            console.log("Must place adjacent to hive");
+            return false;
+        }
+    }
 
     return true;
 };
