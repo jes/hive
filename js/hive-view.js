@@ -110,20 +110,28 @@ HiveView.prototype.redraw = function() {
 
     let canvas = document.getElementById(this.element_id + "-canvas");
     let ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // draw the pieces
     for (let hex in this.game.board) {
+        let len = this.game.board[hex].length;
+
+        // if we're partway through a move, and we're removing a piece from this tile, hide it from the view
+        if (this.movestart && this.movestart[0] == 'tile' && (this.movestart[1] + "," + this.movestart[2]) == hex)
+            len--;
+
+        if (len <= 0)
+            continue;
+
         let xy = this.hex2xy(hex.split(","));
         xy[0] += offx/this.zoom;
         xy[1] += offy/this.zoom;
 
-        let colour = this.game.board[hex][0][0];
-        let piece = this.game.board[hex][0][1];
+        let colour = this.game.board[hex][len-1][0];
+        let piece = this.game.board[hex][len-1][1];
 
         let img = document.getElementById(this.element_id + "-" + colour + "-" + piece);
         ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, xy[0]-(img.naturalWidth/(2*this.zoom)), xy[1]-(img.naturalHeight/(2*this.zoom)), img.naturalWidth/this.zoom, img.naturalHeight/this.zoom);
-        ctx.rect(xy[0]-2.5, xy[1]-2.5, 5, 5);
-        ctx.stroke();
     }
 
     // if (this.movestart), hide the piece they picked up?

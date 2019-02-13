@@ -14,13 +14,28 @@ Hive.prototype.is_legal_move = function(move) {
     return true;
 };
 
-// move = [["piece", "queen"], [3, 2]]
+// move = [["piece", "queenbee"], [3, 2]]
 // move = [["tile", 3, 2], [4, 5]]
 Hive.prototype.play_move = function(move) {
     if (!this.is_legal_move(move))
         throw "Illegal move";
 
-    // apply the move
+    let placepiece;
+
+    if (move[0][0] == 'piece') {
+        placepiece = [this.turn, move[0][1]];
+    } else if (move[0][0] == 'tile') {
+        let movefrom = [move[0][1], move[0][2]];
+        placepiece = this.board[movefrom[0] + "," + movefrom[1]].pop();
+    }
+
+    let moveto = move[1];
+
+    if (!this.board[moveto[0] + "," + moveto[1]])
+        this.board[moveto[0] + "," + moveto[1]] = [];
+    this.board[moveto[0] + "," + moveto[1]].push(placepiece);
+
+    console.log(this.board);
 
     this.turn = this.other[this.turn];
 };
