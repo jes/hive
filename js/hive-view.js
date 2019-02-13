@@ -179,6 +179,9 @@ HiveView.prototype.redraw = function() {
 // click = ['piece', 'white', 'beetle'] for unplayed pieces
 // click = ['tile', 3, 2] for clicks in play area
 HiveView.prototype.handle_click = function(click) {
+    if (this.game.draw() || this.game.winner())
+        return;
+
     if (click[0] == "piece") {
         if (click[1] == this.game.turn)
             click = [click[0], click[2]]; // ["piece", "beetle"]
