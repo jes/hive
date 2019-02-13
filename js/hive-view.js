@@ -53,8 +53,8 @@ HiveView.prototype.populate_pieces = function() {
 
 // [100,150] => [2,3]
 HiveView.prototype.xy2hex = function(xy) {
-    let x = Math.round((this.zoom*xy[0]-this.offx)/160);
-    let y = Math.round((this.zoom*xy[1]-this.offy)/130);
+    let x = Math.round((this.zoom*(xy[0]-this.offx))/160);
+    let y = Math.round((this.zoom*(xy[1]-this.offy))/130);
 
     // now we have the rough x,y coords in hex space that generate this point in pixel space,
     // we need to see which of the adjacent hexes is closest to where we clicked
@@ -136,8 +136,8 @@ HiveView.prototype.redraw = function() {
     let xzoom = xrange/canvas.width;
     let yzoom = yrange/canvas.height;
     this.zoom = xzoom > yzoom ? xzoom : yzoom;
-    if (this.zoom < 1 || isNaN(this.zoom))
-        this.zoom = 1;
+    if (this.zoom < 2 || isNaN(this.zoom))
+        this.zoom = 2;
 
     this.offx = -(minx/this.zoom + maxx/this.zoom - canvas.width) / 2;
     this.offy = -(miny/this.zoom + maxy/this.zoom - canvas.height) / 2;
