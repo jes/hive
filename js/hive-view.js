@@ -150,11 +150,14 @@ HiveView.prototype.handle_click = function(click) {
     }
 
     if (click[0] == "piece" || !this.movestart) {
+        // TODO: not allowed to move opponent's pieces
+
         if (this.onmovestart(click)) {
             this.movestart = click;
             this.redraw();
         }
     } else {
+        // this click is on the destination tile
         let moveend = [click[1], click[2]]; // [3, 2]
         this.onmove([this.movestart, moveend]);
         this.movestart = false;
