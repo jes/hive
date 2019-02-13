@@ -23,9 +23,7 @@ $(document).ready(function() {
         } else {
             $('#status').text("Illegal move. " + game.turn + " still to play");
         }
-        view.redraw();
     };
 
     $('#status').text(game.turn + " to play");
-    view.redraw();
 });

@@ -1,6 +1,7 @@
 // Hive rules and game state tracking
 function Hive() {
     this.turn = 'white';
+    this.turnnum = 0;
     this.other = {
         'white': 'black',
         'black': 'white',
@@ -75,9 +76,9 @@ Hive.prototype.play_move = function(move) {
         this.board[moveto[0] + "," + moveto[1]] = [];
     this.board[moveto[0] + "," + moveto[1]].push(placepiece);
 
-    console.log(this.board);
-
     this.turn = this.other[this.turn];
+    if (this.turn == 'white')
+        this.turnnum++;
 };
 
 // return 'white', 'black', or false

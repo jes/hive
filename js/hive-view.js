@@ -4,7 +4,9 @@ function HiveView(element_id, game) {
     this.game = game;
 
     this.images_loaded = 0;
-    this.zoom = 2.5;
+    this.zoom = 1;
+    this.offx = 0;
+    this.offy = 0;
     this.onmovestart = function() {};
     this.onmove = function() {};
     this.movestart = false;
@@ -30,7 +32,6 @@ HiveView.prototype.populate_pieces = function() {
         for (let piece of ["queenbee", "spider", "beetle", "grasshopper", "soldierant"]) {
             html += "<img style=\"width:64px; margin-bottom: 10px\" id=\"" + this.element_id + "-" + player + "-" + piece + "\" src=\"img/" + player + "-" + piece + ".png\"><span id=\"" + this.element_id + "-" + player + "-" + piece + "-label\"></span><br>";
         }
-        console.log(html);
         $('#' + this.element_id + "-" + player + "-pieces").html(html);
 
         for (let piece of ["queenbee", "spider", "beetle", "grasshopper", "soldierant"]) {
@@ -52,13 +53,8 @@ HiveView.prototype.populate_pieces = function() {
 
 // [100,150] => [2,3]
 HiveView.prototype.xy2hex = function(xy) {
-    // TODO: work out what offx/offy is required (pre-zoom) to centre the game board
-    // and this should be applied in hex2xy/xy2hex instead of redraw()
-    let offx = 1000;
-    let offy = 300;
-
-    let x = Math.round((this.zoom*xy[0]-offx)/160);
-    let y = Math.round((this.zoom*xy[1]-offy)/130);
+    let x = Math.round((this.zoom*xy[0]-this.offx)/160);
+    let y = Math.round((this.zoom*xy[1]-this.offy)/130);
 
     // now we have the rough x,y coords in hex space that generate this point in pixel space,
     // we need to see which of the adjacent hexes is closest to where we clicked
@@ -68,8 +64,6 @@ HiveView.prototype.xy2hex = function(xy) {
     for (let hy of [y-2, y-1, y, y+1, y+2]) {
         for (let hx of [x-2, x-1, x, x+1, x+2]) {
             let hxy = this.hex2xy([hx,hy]);
-            hxy[0] += offx/this.zoom;
-            hxy[1] += offy/this.zoom;
             let dx = hxy[0]-xy[0];
             let dy = hxy[1]-xy[1];
             let r = Math.sqrt(dx*dx + dy*dy);
@@ -90,8 +84,8 @@ HiveView.prototype.xy2hex = function(xy) {
 // [2,3] => [100, 150]
 HiveView.prototype.hex2xy = function(hex) {
     // hex width at zoom level 1 = 160 px
-    let x = (hex[0] * 160) / this.zoom;
-    let y = (hex[1] * 130) / this.zoom;
+    let x = (hex[0] * 160) / this.zoom + this.offx;
+    let y = (hex[1] * 130) / this.zoom + this.offy;
 
     // odd-numbered rows are offset in x by -80px
     if (hex[1]%2 != 0)
@@ -101,16 +95,53 @@ HiveView.prototype.hex2xy = function(hex) {
 };
 
 HiveView.prototype.redraw = function() {
-    // TODO: work out what offx/offy is required (pre-zoom) to centre the game board
-    // and this should be applied in hex2xy/xy2hex instead of redraw()
-    let offx = 1000;
-    let offy = 300;
-
-    // TODO: work out what zoom level we need, update this.zoom
-
     let canvas = document.getElementById(this.element_id + "-canvas");
     let ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // work out what zoom level we need, update this.zoom
+    this.offx = 0;
+    this.offy = 0;
+    this.zoom = 1;
+    let minx = 100000, miny = 100000, maxx = -100000, maxy = -100000;
+    for (let hex in this.game.board) {
+        let len = this.game.board[hex].length;
+
+        // if we're partway through a move, and we're removing a piece from this tile, hide it from the view
+        if (this.movestart && this.movestart[0] == 'tile' && (this.movestart[1] + "," + this.movestart[2]) == hex)
+            len--;
+
+        if (len <= 0)
+            continue;
+
+        let xy = this.hex2xy(hex.split(","));
+        if (xy[0] < minx)
+            minx = xy[0];
+        if (xy[1] < miny)
+            miny = xy[1];
+        if (xy[0] > maxx)
+            maxx = xy[0];
+        if (xy[1] > maxy)
+            maxy = xy[1];
+    }
+    // add enough space for an extra piece around each edge
+    minx -= 160;
+    maxx += 160;
+    miny -= 130;
+    maxy += 130;
+    // compute the required range
+    let xrange = maxx - minx;
+    let yrange = maxy - miny;
+    // and set the zoom level
+    let xzoom = xrange/canvas.width;
+    let yzoom = yrange/canvas.height;
+    this.zoom = xzoom > yzoom ? xzoom : yzoom;
+    if (this.zoom < 1 || isNaN(this.zoom))
+        this.zoom = 1;
+
+    this.offx = -(minx + maxx - canvas.width) / 2;
+    this.offy = -(miny + maxy - canvas.height) / 2;
+    console.log([this.offx, this.offy]);
 
     // draw the pieces
     for (let hex in this.game.board) {
@@ -124,8 +155,6 @@ HiveView.prototype.redraw = function() {
             continue;
 
         let xy = this.hex2xy(hex.split(","));
-        xy[0] += offx/this.zoom;
-        xy[1] += offy/this.zoom;
 
         let colour = this.game.board[hex][len-1][0];
         let piece = this.game.board[hex][len-1][1];
@@ -162,15 +191,21 @@ HiveView.prototype.handle_click = function(click) {
 
         if (this.onmovestart(click)) {
             this.movestart = click;
-            this.redraw();
-        }
 
-        // TODO: if it's turn 1 for white, just place their piece at 0,0
+            // if it's turn 1 for white, just place their piece at 0,0
+            if (this.game.turn == 'white' && this.game.turnnum == 0) {
+                let move = [this.movestart, [0, 0]];
+                this.movestart = false;
+                this.onmove(move);
+            }
+        }
+        this.redraw();
     } else {
         // this click is on the destination tile
         let moveend = [click[1], click[2]]; // [3, 2]
         let move = [this.movestart, moveend];
         this.movestart = false;
         this.onmove(move);
+        this.redraw();
     }
 };
