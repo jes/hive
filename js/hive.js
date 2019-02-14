@@ -319,6 +319,8 @@ Hive.prototype.is_legal_move = function(move) {
             return false;
         }
 
+        // TODO: instead of bodging hacks for "avoid_hex" we should actually remove the piece from the board before calculating movements
+
         if (piece[1] == 'queenbee') {
             if (!this.is_steppable(movefromstr, movetostr)) {
                 console.log("queenbee can only move to adjacent tiles");
