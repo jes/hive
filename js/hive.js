@@ -278,8 +278,21 @@ Hive.prototype.is_legal_move = function(move) {
                 }
             }
         }
-        // TODO: can the piece be slid into this slot from outside the playing area?
+        // can the piece be slid into this slot from outside the playing area?
         // (try finding a slidable route from a place that is just outside the play area)
+        let minx = 0, miny = 0;
+        for (let hex in this.board) {
+            let p = hex.split(",");
+            if (p[1] < miny || (p[1] == miny && p[0] < minx)) {
+                minx = p[0];
+                miny = p[1];
+            }
+        }
+        let minhex = (minx-1) + "," + miny;
+        if (this.turnnum != 0 && !this.is_steppable_route(minhex, movetostr)) {
+            console.log("Can't slide into place: " + movetostr);
+            return false;
+        }
     } else if (move[0][0] == 'tile') {
         let movefromstr = move[0][1] + "," + move[0][2];
         let piece = this.piece_at(movefromstr);
