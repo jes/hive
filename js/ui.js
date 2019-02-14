@@ -27,7 +27,13 @@ $(document).ready(function() {
                     view.redraw();
                 }
 
-                $('#status').text(game.turn + " to play");
+                if (game.winner()) {
+                    $('#status').text(game.winner() + " wins");
+                } else if (game.draw()) {
+                    $('#status').text("It's a draw");
+                } else {
+                    $('#status').text(game.turn + " to play");
+                }
             }
         } else {
             $('#status').text("Illegal move. " + game.turn + " still to play");
