@@ -23,6 +23,14 @@ $(document).ready(function() {
         } else {
             $('#status').text("Illegal move. " + game.turn + " still to play");
         }
+
+        // TODO: abstract ai into a separate file
+        if (game.turn == 'black') {
+            let moves = game.legal_moves();
+            let move = moves[Math.round(Math.random() * moves.length)];
+            game.play_move(move);
+            view.redraw();
+        }
     };
 
     $('#status').text(game.turn + " to play");

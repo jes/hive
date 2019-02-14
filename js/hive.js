@@ -404,6 +404,60 @@ Hive.prototype.play_move = function(move) {
         this.turnnum++;
 };
 
+// return list of legal moves
+Hive.prototype.legal_moves = function() {
+    let moves = [];
+
+    // list of empty spaces adjacent to the hive
+    let places = [];
+    let got_place = {};
+    for (let hex in this.board) {
+        if (!this.piece_at(hex))
+            continue;
+        let adj = this.adjacent_tiles(hex);
+        for (let tile of adj) {
+            if (got_place[tile])
+                continue;
+            got_place[tile] = true;
+            places.push(tile);
+        }
+    }
+
+    // place new pieces
+    for (let piece of ['queenbee', 'spider', 'beetle', 'grasshopper', 'soldierant']) {
+        if (this.remaining_pieces[piece] <= 0)
+            continue;
+
+        for (let hex of places) {
+            let p = hex.split(",");
+            let move = [['piece', piece], [p[0], p[1]]];
+            if (this.is_legal_move(move))
+                moves.push(move);
+        }
+    }
+
+    // move existing pieces
+    for (let hex1 in this.board) {
+        let piece = this.piece_at(hex1);
+        if (!piece || piece[0] != this.turn)
+            continue;
+
+        let moveto = places;
+        if (piece[1] == 'beetle')
+            moveto = this.adjacent_tiles(hex1);
+
+        for (let hex2 of moveto) {
+            let p1 = hex1.split(",");
+            let p2 = hex2.split(",");
+            let move = [['tile', p1[0], p1[1]], [p2[0], p2[1]]];
+            if (this.is_legal_move(move))
+                moves.push(move);
+        }
+    }
+
+    return moves;
+};
+
 // return 'white', 'black', or false
 Hive.prototype.winner = function() {
     if (this.draw())
