@@ -14,19 +14,19 @@ $(document).ready(function() {
         if (game.is_legal_move(move)) {
             game.play_move(move);
 
-            // TODO: abstract ai into a separate file
-            if (game.turn == 'black') {
-                let moves = game.legal_moves();
-                let move = moves[Math.round(Math.random() * moves.length)];
-                game.play_move(move);
-                view.redraw();
-            }
-
             if (game.winner()) {
                 $('#status').text(game.winner() + " wins");
             } else if (game.draw()) {
                 $('#status').text("It's a draw");
             } else {
+                // TODO: abstract ai into a separate file
+                if (game.turn == 'black') {
+                    let moves = game.legal_moves();
+                    let move = moves[Math.round(Math.random() * moves.length)];
+                    game.play_move(move);
+                    view.redraw();
+                }
+
                 $('#status').text(game.turn + " to play");
             }
         } else {
