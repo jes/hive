@@ -102,10 +102,10 @@ Hive.prototype.is_adjacent = function(hex1, hex2) {
 };
 
 // return true if "hex" is adjacent to any pieces
-Hive.prototype.adjacent_to_hive = function(hex) {
+Hive.prototype.adjacent_to_hive = function(hex, avoid_hex) {
     let adj = this.adjacent_tiles(hex);
     for (t of adj) {
-        if (this.piece_at(t))
+        if (this.piece_at(t) && t != avoid_hex)
             return true;
     }
     return false;
@@ -312,6 +312,10 @@ Hive.prototype.is_legal_move = function(move) {
         }
         if (!this.hive_connected(movefromstr)) {
             console.log("Can't disconnect the hive");
+            return false;
+        }
+        if (!this.adjacent_to_hive(movetostr, movefromstr)) {
+            console.log("Can't move away from hive");
             return false;
         }
 
