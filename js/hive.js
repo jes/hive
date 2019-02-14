@@ -314,7 +314,7 @@ Hive.prototype.is_legal_move = function(move) {
             console.log("Can't disconnect the hive");
             return false;
         }
-        if (!this.adjacent_to_hive(movetostr, movefromstr)) {
+        if (len == 1 && !this.adjacent_to_hive(movetostr, movefromstr)) {
             console.log("Can't move away from hive");
             return false;
         }
