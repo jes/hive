@@ -97,6 +97,16 @@ Hive.prototype.is_adjacent = function(hex1, hex2) {
     return false;
 };
 
+// return true if "hex" is adjacent to any pieces
+Hive.prototype.adjacent_to_hive = function(hex) {
+    let adj = this.adjacent_tiles(hex);
+    for (t of adj) {
+        if (this.piece_at(t))
+            return true;
+    }
+    return false;
+};
+
 // return list of unoccupied tiles adjacent to hex that can be slid in to
 Hive.prototype.steppable_tiles = function(hex) {
     let adj = this.adjacent_tiles(hex);
@@ -142,17 +152,39 @@ Hive.prototype.is_steppable = function(hex1, hex2) {
     return false;
 };
 
-// return true if there is a route from hex1 to hex2 that is ok for a spider
-Hive.prototype.can_spider = function(hex1, hex2) {
+// return true if there is a steppable route from hex1 to hex2 of any length
+// TODO: refactor this and can_spider into a single function?
+Hive.prototype.is_steppable_route = function(hex1, hex2) {
     let q = [[0, hex1]];
     let visited = {hex1: true};
-    console.log(["can_spider", hex1, hex2]);
-    while (q.length > 0 && q[0][0] <= 3) {
+    while (q.length > 0) {
         let state = q.shift();
         let steps = state[0];
         let thishex = state[1];
 
-        console.log(["spider_check", steps, thishex]);
+        if (thishex == hex2)
+            return true;
+
+        let step = this.steppable_tiles(thishex);
+        for (let hex of step) {
+            if (visited[hex] || !this.adjacent_to_hive(hex))
+                continue;
+            q.push([steps+1, hex]);
+            visited[hex] = true;
+        }
+    }
+
+    return false;
+};
+
+// return true if there is a route from hex1 to hex2 that is ok for a spider
+Hive.prototype.can_spider = function(hex1, hex2) {
+    let q = [[0, hex1]];
+    let visited = {hex1: true};
+    while (q.length > 0 && q[0][0] <= 3) {
+        let state = q.shift();
+        let steps = state[0];
+        let thishex = state[1];
 
         if (steps == 3 && thishex == hex2)
             return true;
@@ -280,7 +312,7 @@ Hive.prototype.is_legal_move = function(move) {
                 return false;
             }
         } else if (piece[1] == 'beetle') {
-            if (!this.is_steppable(movefromstr, movetostr)) {
+            if (!this.is_adjacent(movefromstr, movetostr)) {
                 console.log("beetle can only move to adjacent tiles");
                 return false;
             }
@@ -297,7 +329,10 @@ Hive.prototype.is_legal_move = function(move) {
                 return false;
             }
         } else if (piece[1] == 'soldierant') {
-            // TODO: is there any slidable route from movefromstr to movetostr?
+            if (!this.is_steppable_route(movefromstr, movetostr)) {
+                console.log("no route");
+                return false;
+            }
         }
 
         if (piece[1] != 'beetle' && this.piece_at(movetostr)) {
