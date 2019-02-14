@@ -64,8 +64,6 @@ Hive.prototype.adjacent_tiles = function(hex) {
     let xy = hex.split(",");
     let adj = [];
 
-    console.log(["adjacent",hex]);
-
     xy[0] = parseInt(xy[0]);
     xy[1] = parseInt(xy[1]);
 
@@ -112,15 +110,11 @@ Hive.prototype.steppable_tiles = function(hex) {
     // and we can slide into (e.g.) "1" if either "3" or "5" are unoccuped
     let order = [2, 3, 1, 5, 4, 0];
 
-    console.log(["stepadj",hex,adj]);
-
     for (let i=0; i < order.length; i++) {
         // a,b,c are adjacent tiles in clockwise order
         let a = adj[order[i]];
         let b = adj[order[(i+1)%6]];
         let c = adj[order[(i+2)%6]];
-
-        console.log(["stepcheck",a,b,c]);
 
         // can't slide into an occupied tile
         if (this.piece_at(b))
@@ -133,7 +127,6 @@ Hive.prototype.steppable_tiles = function(hex) {
         steppable.push(b);
     }
 
-    console.log(["steppable",hex,steppable]);
     return steppable;
 };
 
@@ -144,6 +137,33 @@ Hive.prototype.is_steppable = function(hex1, hex2) {
     for (t of step) {
         if (t == hex2)
             return true;
+    }
+
+    return false;
+};
+
+// return true if there is a route from hex1 to hex2 that is ok for a spider
+Hive.prototype.can_spider = function(hex1, hex2) {
+    let q = [[0, hex1]];
+    let visited = {hex1: true};
+    console.log(["can_spider", hex1, hex2]);
+    while (q.length > 0 && q[0][0] <= 3) {
+        let state = q.shift();
+        let steps = state[0];
+        let thishex = state[1];
+
+        console.log(["spider_check", steps, thishex]);
+
+        if (steps == 3 && thishex == hex2)
+            return true;
+
+        let step = this.steppable_tiles(thishex);
+        for (let hex of step) {
+            if (visited[hex])
+                continue;
+            q.push([steps+1, hex]);
+            visited[hex] = true;
+        }
     }
 
     return false;
@@ -233,6 +253,7 @@ Hive.prototype.is_legal_move = function(move) {
         }
         if (movetostr == movefromstr) {
             console.log("Piece must be moved");
+            return false;
         }
         let len = this.board[movefromstr].length;
         if (this.board[movefromstr][len-1][0] != this.turn) {
@@ -254,7 +275,10 @@ Hive.prototype.is_legal_move = function(move) {
                 return false;
             }
         } else if (piece[1] == 'spider') {
-            // TODO: is there a 3-step slidable route from movefromstr to movetostr?
+            if (!this.can_spider(movefromstr, movetostr)) {
+                console.log("can't spider");
+                return false;
+            }
         } else if (piece[1] == 'beetle') {
             if (!this.is_steppable(movefromstr, movetostr)) {
                 console.log("beetle can only move to adjacent tiles");

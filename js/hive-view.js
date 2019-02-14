@@ -141,7 +141,6 @@ HiveView.prototype.redraw = function() {
 
     this.offx = -(minx/this.zoom + maxx/this.zoom - canvas.width) / 2;
     this.offy = -(miny/this.zoom + maxy/this.zoom - canvas.height) / 2;
-    console.log([this.offx, this.offy]);
 
     // draw the pieces
     for (let hex in this.game.board) {
