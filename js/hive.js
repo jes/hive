@@ -185,6 +185,7 @@ Hive.prototype.is_steppable_route = function(hex1, hex2) {
 Hive.prototype.can_spider = function(hex1, hex2) {
     let q = [[0, hex1]];
     let visited = {hex1: true};
+    // TODO: "visited" list needs to be per-path instead of global
     while (q.length > 0 && q[0][0] <= 3) {
         let state = q.shift();
         let steps = state[0];
@@ -226,12 +227,12 @@ Hive.prototype.can_grasshopper = function(hex1, hex2) {
 
     // now see if there is a route in this direction from hex1 to hex2 over occupied tiles
     let hex = hex1;
-    while (this.piece_at(hex)) {
+    do {
         let adj = this.adjacent_tiles(hex);
         hex = adj[dir];
         if (hex == hex2)
             return true;
-    }
+    } while (this.piece_at(hex));
     return false;
 };
 
@@ -279,6 +280,8 @@ Hive.prototype.is_legal_move = function(move) {
         // (try finding a slidable route from a place that is just outside the play area)
         let minx = 0, miny = 0;
         for (let hex in this.board) {
+            if (!this.piece_at(hex))
+                continue;
             let p = hex.split(",");
             if (p[1] < miny || (p[1] == miny && p[0] < minx)) {
                 minx = p[0];
@@ -310,13 +313,18 @@ Hive.prototype.is_legal_move = function(move) {
             console.log("Can't move pieces before placing the queenbee");
             return false;
         }
-        if (!this.hive_connected(movefromstr)) {
+
+        // now remove this piece from the board
+        this.board[movefromstr].pop();
+        let ok = true;
+
+        if (!this.hive_connected()) {
             console.log("Can't disconnect the hive");
-            return false;
+            ok = false;
         }
-        if (len == 1 && !this.adjacent_to_hive(movetostr, movefromstr)) {
+        if (len == 1 && !this.adjacent_to_hive(movetostr)) {
             console.log("Can't move away from hive");
-            return false;
+            ok = false;
         }
 
         // TODO: instead of bodging hacks for "avoid_hex" we should actually remove the piece from the board before calculating movements
@@ -324,17 +332,17 @@ Hive.prototype.is_legal_move = function(move) {
         if (piece[1] == 'queenbee') {
             if (!this.is_steppable(movefromstr, movetostr)) {
                 console.log("queenbee can only move to adjacent tiles");
-                return false;
+                ok = false;
             }
         } else if (piece[1] == 'spider') {
             if (!this.can_spider(movefromstr, movetostr)) {
                 console.log("can't spider");
-                return false;
+                ok = false;
             }
         } else if (piece[1] == 'beetle') {
             if (!this.is_adjacent(movefromstr, movetostr)) {
                 console.log("beetle can only move to adjacent tiles");
-                return false;
+                ok = false;
             }
             // TODO: Beetles have an important but rarely-seen movement restriction,
             // a variation of the Freedom to Move Rule; a Beetle may not move directly
@@ -346,19 +354,24 @@ Hive.prototype.is_legal_move = function(move) {
         } else if (piece[1] == 'grasshopper') {
             if (!this.can_grasshopper(movefromstr, movetostr)) {
                 console.log("can't grasshopper");
-                return false;
+                ok = false;
             }
         } else if (piece[1] == 'soldierant') {
             if (!this.is_steppable_route(movefromstr, movetostr)) {
                 console.log("no route");
-                return false;
+                ok = false;
             }
         }
 
         if (piece[1] != 'beetle' && this.piece_at(movetostr)) {
             console.log("Can't move on top of another piece");
-            return false;
+            ok = false;
         }
+
+        // put the piece back on the board
+        this.board[movefromstr].push(piece);
+        if (!ok)
+            return false;
     } else {
         console.log("Unknown move type: " + move[0][0]);
         return false;
