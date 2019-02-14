@@ -211,9 +211,6 @@ Hive.prototype.can_grasshopper = function(hex1, hex2) {
     let p2 = hex2.split(",");
     let dir;
 
-    // TODO: this function certainly rejects some legal grasshopper moves,
-    // particularly it rejected a 1-tile hop in the "bottom left" direction
-
     // work out which direction we need to travel in, which corresponds to the
     // tile index from adjacent_tiles()
     if (p1[1] == p2[1]) { // horizontal
@@ -229,13 +226,13 @@ Hive.prototype.can_grasshopper = function(hex1, hex2) {
 
     // now see if there is a route in this direction from hex1 to hex2 over occupied tiles
     let hex = hex1;
-    while (hex != hex2) {
+    while (this.piece_at(hex)) {
         let adj = this.adjacent_tiles(hex);
         hex = adj[dir];
-        if (!this.piece_at(hex))
-            return false;
+        if (hex == hex2)
+            return true;
     }
-    return true;
+    return false;
 };
 
 // hex = "1,2"
