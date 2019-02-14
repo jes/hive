@@ -13,6 +13,15 @@ $(document).ready(function() {
     view.onmove = function(move) {
         if (game.is_legal_move(move)) {
             game.play_move(move);
+
+            // TODO: abstract ai into a separate file
+            if (game.turn == 'black') {
+                let moves = game.legal_moves();
+                let move = moves[Math.round(Math.random() * moves.length)];
+                game.play_move(move);
+                view.redraw();
+            }
+
             if (game.winner()) {
                 $('#status').text(game.winner() + " wins");
             } else if (game.draw()) {
@@ -22,14 +31,6 @@ $(document).ready(function() {
             }
         } else {
             $('#status').text("Illegal move. " + game.turn + " still to play");
-        }
-
-        // TODO: abstract ai into a separate file
-        if (game.turn == 'black') {
-            let moves = game.legal_moves();
-            let move = moves[Math.round(Math.random() * moves.length)];
-            game.play_move(move);
-            view.redraw();
         }
     };
 
