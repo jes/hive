@@ -13,6 +13,10 @@ function Hive() {
     };
 
     this.board = {};
+    this.queenbee = {
+        'white': false,
+        'black': false,
+    };
 }
 
 Hive.prototype.occupied_tiles = function(avoid_hex) {
@@ -381,6 +385,9 @@ Hive.prototype.play_move = function(move) {
         this.board[moveto[0] + "," + moveto[1]] = [];
     this.board[moveto[0] + "," + moveto[1]].push(placepiece);
 
+    if (placepiece[1] == 'queenbee')
+        this.queenbee[this.turn] = moveto[0] + "," + moveto[1];
+
     // TODO: if there are no legal moves for the other player, turn comes back to this player
     this.turn = this.other[this.turn];
     if (this.turn == 'white')
@@ -392,13 +399,35 @@ Hive.prototype.winner = function() {
     if (this.draw())
         return false;
 
-    // TODO: is either player's queen bee surrounded?
+    for (let p of ['white', 'black']) {
+        if (!this.queenbee[p])
+            continue;
+        let adj = this.adjacent_tiles(this.queenbee[p]);
+        let surrounded = true;
+        for (let hex of adj) {
+            if (!this.piece_at(hex)) {
+                surrounded = false;
+            }
+        }
+        // if p's queen is surrounded, other[p] wins
+        if (surrounded)
+            return this.other[p];
+    }
 
     return false;
 };
 
 // return true or false
 Hive.prototype.draw = function() {
-    // TODO: are both players' queen bees surrounded?
-    return false;
+    // it's a draw if both players' queen bees are surrounded
+    for (let p of ['white', 'black']) {
+        if (!this.queenbee[p])
+            return false;
+        let adj = this.adjacent_tiles(this.queenbee[p]);
+        for (let hex of adj) {
+            if (!this.piece_at(hex)) // if there is any tile adjacent to the queen that is not occupied, it's not a draw
+                return false;
+        }
+    }
+    return true;
 };
